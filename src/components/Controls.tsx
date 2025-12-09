@@ -63,6 +63,35 @@ const Controls: React.FC<ControlsProps> = ({
 
             <div className="w-px h-8 bg-gray-700 mx-2" />
 
+
+
+            {/* Map Settings Inputs */}
+            <div className="flex items-center gap-2 px-2">
+                <div className="flex flex-col gap-1">
+                    <input 
+                        type="text"
+                        value={seed}
+                        onChange={(e) => onSeedChange(e.target.value)}
+                        className="w-24 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-xs"
+                        placeholder="Seed"
+                    />
+                    <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-gray-400">Nodes:</span>
+                        <input 
+                            type="number" min="5" max="200" step="1"
+                            value={nodeCount}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val)) onNodeCountChange(Math.min(200, Math.max(5, val)));
+                            }}
+                            className="w-12 bg-gray-700 text-white px-1 py-0.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-xs text-center"
+                        />
+                    </div>
+                </div>
+            </div>
+            
+            <div className="w-px h-8 bg-gray-700 mx-2" />
+
             <button 
                 onClick={onRegenerateMap}
                 className="p-3 rounded-lg bg-gray-700/50 text-gray-400 hover:bg-gray-700 transition-colors"
@@ -79,30 +108,6 @@ const Controls: React.FC<ControlsProps> = ({
                 <Dice5 size={20} />
             </button>
 
-            <div className="w-px h-8 bg-gray-700 mx-2" />
-
-            {/* Map Settings Inputs */}
-            <div className="flex items-center gap-2 px-2">
-                <div className="flex flex-col gap-1">
-                    <input 
-                        type="text"
-                        value={seed}
-                        onChange={(e) => onSeedChange(e.target.value)}
-                        className="w-24 bg-gray-700 text-white px-2 py-1 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-xs"
-                        placeholder="Seed"
-                    />
-                    <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-gray-400">Nodes: {nodeCount}</span>
-                        <input 
-                            type="range" min="5" max="50" step="1"
-                            value={nodeCount}
-                            onChange={(e) => onNodeCountChange(parseInt(e.target.value))}
-                            className="w-16 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        />
-                    </div>
-                </div>
-            </div>
-            
             <button 
                 onClick={onResetView}
                 className="p-3 rounded-lg bg-gray-700/50 text-gray-400 hover:bg-gray-700 transition-colors"

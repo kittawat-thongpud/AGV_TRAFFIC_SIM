@@ -157,6 +157,28 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
                         );
                     })}
 
+                    {/* Goal Node Highlights */}
+                    {agvs.map(agv => {
+                        if (!agv.targetNode) return null;
+                        const targetNode = mapData.nodes.find(n => n.id === agv.targetNode);
+                        if (!targetNode) return null;
+                        
+                        const isSelected = selectedAgvId === agv.id;
+                        if (!showAllPaths && !isSelected) return null;
+
+                        return (
+                            <g key={`goal-${agv.id}`} transform={`translate(${targetNode.x}, ${targetNode.y})`}>
+                                {/* Pulse Effect for Goal */}
+                                <circle r={NODE_RADIUS + 8} fill="none" stroke={agv.color} strokeWidth="2" opacity="0.5" className="animate-pulse" />
+                                <circle r={NODE_RADIUS + 4} fill="none" stroke={agv.color} strokeWidth="2" opacity="0.8" />
+                                {/* Flag Icon or similar */}
+                                <g transform="translate(-8, -25)">
+                                   <path d="M 4 0 L 4 16 M 4 0 L 14 5 L 4 10" stroke={agv.color} strokeWidth="2" fill={agv.color} fillOpacity="0.5" />
+                                </g>
+                            </g>
+                        );
+                    })}
+
                     {/* Nodes */}
                     {mapData.nodes.map(node => (
                         <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>

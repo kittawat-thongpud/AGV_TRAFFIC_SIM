@@ -24,11 +24,34 @@ export const checkTrafficRules = (currentAgv: AGV, allAgvs: AGV[], currentNodeOb
         );
 
         if (reservingAgv) {
-            // Found a higher priority reservation (someone claimed it first)
-             action = 'WAIT';
-             conflictReason = `Node ${myNextNode} Reserved`;
-             blockerId = reservingAgv.id;
-             return { action, conflictReason, avoidData, blockerId };
+            // Found a conflicting reservation.
+            // PRIORITY CHECK: "First Come First Serve"
+            // Compare pathPlanningTime. Smaller (older) time wins.
+            // If times are equal, use ID as tie-breaker.
+            
+            const myTime = currentAgv.pathPlanningTime || 0;
+            const otherTime = reservingAgv.pathPlanningTime || 0;
+            
+            let iShouldYield = false;
+
+            if (otherTime < myTime) {
+                iShouldYield = true; // He is older
+            } else if (otherTime > myTime) {
+                iShouldYield = false; // I am older
+            } else {
+                // Equal times, use ID
+                if (reservingAgv.id < currentAgv.id) {
+                    iShouldYield = true;
+                }
+            }
+
+            if (iShouldYield) {
+                 action = 'WAIT';
+                 conflictReason = `Yield to Reserved AGV-${reservingAgv.id.toString().slice(-4)}`;
+                 blockerId = reservingAgv.id;
+                 return { action, conflictReason, avoidData, blockerId };
+            }
+            // If I don't yield, I proceed (and he will yield when he runs this check)
         }
     }
     // --------------------------------------------------

@@ -55,6 +55,7 @@ export interface AGV {
     retryCount: number;
     pathRank: number;
     reservedNodes: string[];
+    pathPlanningTime: number;
 }
 
 export interface FleetConfig {

@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { AGV, MapData, FleetConfig } from '../types';
-import { buildGraph, findPath, findAllPaths } from '../lib/pathfinding';
+import { buildGraph, findPath } from '../lib/pathfinding';
 import { checkTrafficRules } from '../lib/trafficManager';
 
 const RETRY_INTERVAL = 60;
-const MAX_RETRIES_PER_RANK = 3;
+
 
 export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig) => {
     const [agvs, setAgvs] = useState<AGV[]>([]);
@@ -55,7 +55,8 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
             currentSpeed: 0,
             retryCount: 0,
             pathRank: 0,
-            reservedNodes: []
+            reservedNodes: [],
+            pathPlanningTime: Date.now()
         };
 
         setAgvs(prev => [...prev, newAgv]);
@@ -91,7 +92,8 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
                                 waitTimer: 0,
                                 retryCount: 0,
                                 pathRank: 0,
-                                reservedNodes: newPath.slice(0, agv.hardBorrowLength)
+                                reservedNodes: newPath.slice(0, agv.hardBorrowLength),
+                                pathPlanningTime: Date.now()
                             };
                         }
                     }
@@ -118,11 +120,11 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
 
                 // REDIRECTION LOGIC 
                 if (action === 'REPATH_HEAD_ON') {
-                    const allPaths = findAllPaths(agv.currentNode, agv.targetNode!, graph, [], avoidData ? [avoidData] : []);
+                    // Optimized: Use findPath with constraints instead of findAllPaths
+                    // Avoid the specific edge that caused the head-on conflict
+                    const avoidEdges = avoidData ? [avoidData] : [];
+                    const detourPath = findPath(agv.currentNode, agv.targetNode!, graph, [], avoidEdges);
                     
-                    const targetRank = agv.pathRank === 0 ? 1 : agv.pathRank;
-                    const detourPath = (allPaths.length > targetRank) ? allPaths[targetRank].path : (allPaths[0]?.path || []);
-
                     if (detourPath.length > 0) {
                         const newReservedNodes = detourPath.slice(0, agv.hardBorrowLength);
                         
@@ -132,9 +134,10 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
                                 path: detourPath, 
                                 status: 'REPATHING', 
                                 waitTimer: 0, 
-                                pathRank: targetRank,
+                                pathRank: 0, // Reset rank as we found a specific detour
                                 currentSpeed: 0,
-                                reservedNodes: newReservedNodes
+                                reservedNodes: newReservedNodes,
+                                pathPlanningTime: Date.now()
                             };
                         } else {
                             return {
@@ -146,7 +149,7 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
                                 status: 'REPATHING',
                                 waitTimer: 0,
                                 currentSpeed: 0,
-                                pathRank: targetRank,
+                                pathRank: 0,
                                 reservedNodes: newReservedNodes
                             };
                         }
@@ -216,17 +219,14 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
                         }
 
                         // --- STANDARD RANKED RETRY ---
-                        let newPathRank = agv.pathRank;
-                        if (newRetryCount >= MAX_RETRIES_PER_RANK) {
-                            newPathRank = agv.pathRank + 1; 
-                        }
-
+                        // Optimized: Instead of K-Shortest Paths, just try to avoid the blocked node.
+                        // If we already tried avoiding it and failed, maybe we are stuck.
+                        
                         const blockedNodeId = nextNodeId; 
                         const oldCurrentNodeId = agv.currentNode;
                         
-                        const allPaths = findAllPaths(oldCurrentNodeId, agv.targetNode!, graph, [blockedNodeId], []);
-                        const detourPathObj = (allPaths.length > newPathRank) ? allPaths[newPathRank] : allPaths[allPaths.length - 1];
-                        const detourPath = detourPathObj ? detourPathObj.path : [];
+                        // Try to find a path avoiding the node that is blocking us
+                        const detourPath = findPath(oldCurrentNodeId, agv.targetNode!, graph, [blockedNodeId], []);
 
                         if (detourPath.length > 0) {
                             const newReservedNodes = detourPath.slice(0, agv.hardBorrowLength);
@@ -240,8 +240,8 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
                                     status: 'DETOUR',
                                     waitTimer: 0,
                                     currentSpeed: 0,
-                                    retryCount: newRetryCount >= MAX_RETRIES_PER_RANK ? 0 : newRetryCount,
-                                    pathRank: newPathRank,
+                                    retryCount: 0,
+                                    pathRank: 0,
                                     reservedNodes: newReservedNodes
                                 };
                             } else {
@@ -250,8 +250,8 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
                                     path: detourPath,
                                     status: 'DETOUR',
                                     waitTimer: 0,
-                                    retryCount: newRetryCount >= MAX_RETRIES_PER_RANK ? 0 : newRetryCount,
-                                    pathRank: newPathRank,
+                                    retryCount: 0,
+                                    pathRank: 0,
                                     currentSpeed: 0,
                                     reservedNodes: newReservedNodes
                                 };

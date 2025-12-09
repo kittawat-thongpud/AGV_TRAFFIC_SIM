@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MapCanvas from './components/MapCanvas';
 import Sidebar from './components/Sidebar';
 import Controls from './components/Controls';
@@ -10,14 +10,53 @@ import { ViewTransform, FleetConfig } from './types';
 function App() {
   // --- Map State ---
   const [seed, setSeed] = useState("Warehouse-1");
-  const [nodeCount, setNodeCount] = useState(14);
+  const [nodeCount, setNodeCount] = useState(50);
   const [mapData, setMapData] = useState(() => generateMapData("Warehouse-1", 14));
 
   // --- Viewport State ---
   const [viewTransform, setViewTransform] = useState<ViewTransform>({ x: 0, y: 0, k: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [showAllPaths, setShowAllPaths] = useState(false);
+  const [showAllPaths, setShowAllPaths] = useState(true);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- Center Map Effect ---
+  useEffect(() => {
+      if (mapContainerRef.current && mapData.nodes.length > 0) {
+          const containerWidth = mapContainerRef.current.clientWidth;
+          const containerHeight = mapContainerRef.current.clientHeight;
+
+          // Calculate map bounds
+          const xs = mapData.nodes.map(n => n.x);
+          const ys = mapData.nodes.map(n => n.y);
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...xs);
+          const minY = Math.min(...ys);
+          const maxY = Math.max(...ys);
+
+          const mapWidth = maxX - minX;
+          const mapHeight = maxY - minY;
+          const mapCenterX = minX + mapWidth / 2;
+          const mapCenterY = minY + mapHeight / 2;
+
+          // Center logic:
+          // We want mapCenterX to be at containerWidth / 2
+          // x + mapCenterX * k = containerWidth / 2
+          // x = containerWidth / 2 - mapCenterX * k
+          
+          // Auto-fit if map is larger than container
+          const padding = 50;
+          const scaleX = (containerWidth - padding * 2) / mapWidth;
+          const scaleY = (containerHeight - padding * 2) / mapHeight;
+          // Use a slightly lower max scale to avoid being too zoomed in on small maps
+          const k = Math.min(1.2, Math.min(scaleX, scaleY)); 
+          
+          const x = (containerWidth / 2) - (mapCenterX * k);
+          const y = (containerHeight / 2) - (mapCenterY * k);
+
+          setViewTransform({ x, y, k });
+      }
+  }, [mapData, mapContainerRef.current?.clientWidth, mapContainerRef.current?.clientHeight]);
 
   // --- Simulation Hook ---
   const initialFleetConfig: FleetConfig = {
@@ -134,7 +173,7 @@ function App() {
     <div className="flex h-screen w-screen bg-gray-900 text-white overflow-hidden font-sans">
 
       
-      <div className="flex-1 relative flex flex-col">
+      <div ref={mapContainerRef} className="flex-1 relative flex flex-col">
         <MapCanvas 
             mapData={mapData}
             agvs={agvs}

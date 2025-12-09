@@ -25,8 +25,18 @@ export const generateMapData = (seedStr: string, numNodes: number = 14): MapData
     const seed = stringToSeed(seedStr);
     const random = mulberry32(seed);
     
-    const width = 800;
-    const height = 600;
+    // Dynamic dimensions based on node count to ensure they fit with collision spacing
+    // Base area 800x600. Min distance 80px.
+    // Area per node circle ~ (80)^2 = 6400.
+    // With packing factor 2.5:
+    const minDistance = 80;
+    const densityFactor = 2.5;
+    const requiredArea = Math.max(800 * 600, numNodes * (minDistance * minDistance) * densityFactor);
+    const aspectRatio = 800 / 600;
+    
+    const height = Math.sqrt(requiredArea / aspectRatio);
+    const width = height * aspectRatio;
+
     const padding = 50;
     
     const nodes: Node[] = [];
