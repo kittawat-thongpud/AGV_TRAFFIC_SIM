@@ -10,5 +10,5 @@ compatibility_date = "2024-01-01"
 domain = "agv-traffic-sim.kittawat.qzz.io"
 
 # GitHub Repository Binding
-# This project is deployed via GitHub Actions.
+# This project is deployed via GitHub Actions..
 Repo: https://github.com/kittawat/AGV_TRAFFIC_SIM (example)
