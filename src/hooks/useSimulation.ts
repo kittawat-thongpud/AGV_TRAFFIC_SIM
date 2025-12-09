@@ -62,6 +62,29 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
         setAgvs(prev => [...prev, newAgv]);
     };
 
+    const setAgvTarget = (agvId: number, targetNodeId: string) => {
+        setAgvs(prev => prev.map(agv => {
+            if (agv.id !== agvId) return agv;
+
+            // Don't allow setting target if already there or invalid
+            if (agv.currentNode === targetNodeId) return agv;
+
+            const newPath = findPath(agv.currentNode, targetNodeId, graph);
+            
+            return {
+                ...agv,
+                targetNode: targetNodeId,
+                path: newPath,
+                status: 'PLANNING',
+                waitTimer: 0,
+                retryCount: 0,
+                pathRank: 0,
+                reservedNodes: newPath.slice(0, agv.hardBorrowLength),
+                pathPlanningTime: Date.now()
+            };
+        }));
+    };
+
     const updateSimulation = () => {
         if (!isPlaying) return;
 
@@ -364,6 +387,7 @@ export const useSimulation = (mapData: MapData, initialFleetConfig: FleetConfig)
         setSelectedAgvId,
         fleetConfig,
         setFleetConfig,
-        spawnAgv
+        spawnAgv,
+        setAgvTarget
     };
 };

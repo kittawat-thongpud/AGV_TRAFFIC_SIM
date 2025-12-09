@@ -3,6 +3,7 @@ import MapCanvas from './components/MapCanvas';
 import Sidebar from './components/Sidebar';
 import Controls from './components/Controls';
 import Telemetry from './components/Telemetry';
+import TutorialCard from './components/TutorialCard';
 import { generateMapData } from './lib/mapGenerator';
 import { useSimulation } from './hooks/useSimulation';
 import { ViewTransform, FleetConfig } from './types';
@@ -20,8 +21,8 @@ function App() {
   const [showAllPaths, setShowAllPaths] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- Center Map Effect ---
-  useEffect(() => {
+  // --- Center Map Logic ---
+  const centerMap = () => {
       if (mapContainerRef.current && mapData.nodes.length > 0) {
           const containerWidth = mapContainerRef.current.clientWidth;
           const containerHeight = mapContainerRef.current.clientHeight;
@@ -39,11 +40,6 @@ function App() {
           const mapCenterX = minX + mapWidth / 2;
           const mapCenterY = minY + mapHeight / 2;
 
-          // Center logic:
-          // We want mapCenterX to be at containerWidth / 2
-          // x + mapCenterX * k = containerWidth / 2
-          // x = containerWidth / 2 - mapCenterX * k
-          
           // Auto-fit if map is larger than container
           const padding = 50;
           const scaleX = (containerWidth - padding * 2) / mapWidth;
@@ -56,6 +52,11 @@ function App() {
 
           setViewTransform({ x, y, k });
       }
+  };
+
+  // --- Center Map Effect ---
+  useEffect(() => {
+      centerMap();
   }, [mapData, mapContainerRef.current?.clientWidth, mapContainerRef.current?.clientHeight]);
 
   // --- Simulation Hook ---
@@ -78,7 +79,8 @@ function App() {
     setSelectedAgvId,
     fleetConfig,
     setFleetConfig,
-    spawnAgv
+    spawnAgv,
+    setAgvTarget
   } = useSimulation(mapData, initialFleetConfig);
 
   // --- Handlers ---
@@ -88,7 +90,7 @@ function App() {
     setAgvs([]);
     setSelectedAgvId(null);
     setMapData(generateMapData(seed, nodeCount));
-    setViewTransform({ x: 0, y: 0, k: 1 });
+    // View transform reset handled by useEffect on mapData change
   };
 
   const handleRandomizeSeed = () => {
@@ -98,7 +100,7 @@ function App() {
     setAgvs([]);
     setSelectedAgvId(null);
     setMapData(generateMapData(newSeed, nodeCount));
-    setViewTransform({ x: 0, y: 0, k: 1 });
+    // View transform reset handled by useEffect on mapData change
   };
 
   const handleConfigChange = (key: keyof FleetConfig, value: number) => {
@@ -156,7 +158,13 @@ function App() {
   };
 
   const handleResetView = () => {
-      setViewTransform({ x: 0, y: 0, k: 1 });
+      centerMap();
+  };
+
+  const handleNodeClick = (nodeId: string) => {
+      if (selectedAgvId) {
+          setAgvTarget(selectedAgvId, nodeId);
+      }
   };
 
   // Derived state for Sidebar
@@ -174,6 +182,7 @@ function App() {
 
       
       <div ref={mapContainerRef} className="flex-1 relative flex flex-col">
+        <TutorialCard />
         <MapCanvas 
             mapData={mapData}
             agvs={agvs}
@@ -185,6 +194,7 @@ function App() {
             selectedAgvId={selectedAgvId}
             onSelectAgv={setSelectedAgvId}
             showAllPaths={showAllPaths}
+            onNodeClick={handleNodeClick}
         />
 
         <Controls 

@@ -13,6 +13,7 @@ interface MapCanvasProps {
     selectedAgvId: number | null;
     onSelectAgv: (id: number) => void;
     showAllPaths: boolean;
+    onNodeClick?: (nodeId: string) => void;
 }
 
 const NODE_RADIUS = 15;
@@ -27,7 +28,8 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
     onMouseUp,
     selectedAgvId,
     onSelectAgv,
-    showAllPaths
+    showAllPaths,
+    onNodeClick
 }) => {
     const svgContainerRef = useRef<HTMLDivElement>(null);
 
@@ -181,7 +183,15 @@ const MapCanvas: React.FC<MapCanvasProps> = ({
 
                     {/* Nodes */}
                     {mapData.nodes.map(node => (
-                        <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
+                        <g 
+                            key={node.id} 
+                            transform={`translate(${node.x}, ${node.y})`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onNodeClick) onNodeClick(node.id);
+                            }}
+                            className={onNodeClick ? "cursor-pointer hover:opacity-80" : ""}
+                        >
                             <circle r={NODE_RADIUS} fill="#1F2937" stroke="#4B5563" strokeWidth="2" />
                             <text y="4" textAnchor="middle" fill="#9CA3AF" fontSize="10" fontWeight="bold">
                                 {node.id}
