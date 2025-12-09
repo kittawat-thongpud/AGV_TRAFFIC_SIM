@@ -1,0 +1,39 @@
+{
+    "application_goal": "Create a highly realistic and configurable AGV (Automated Guided Vehicle) Traffic Control Simulator.",
+    "technology": "Single-file React component using Tailwind CSS for styling and SVG for visualization.",
+    "map_generation": {
+        "type": "Random Graph/Network (Warehouse Layout)",
+        "details": "Generate a connected graph of nodes and weighted edges (Dijkstra compatible). Must include map zoom and pan functionality."
+    },
+    "agv_dynamics": {
+        "physics": "Implement acceleration, deceleration, and maximum speed limits.",
+        "state_tracking": [
+            "Position (x, y)",
+            "Orientation",
+            "Current Node",
+            "Target Node",
+            "Path (Rough Planning)",
+            "Current Speed"
+        ]
+    },
+    "traffic_control_system": {
+        "planning_level_1_rough": "Use Dijkstra's algorithm to find the shortest path (Rough Planning).",
+        "planning_level_2_hard_borrow": {
+            "reservation": "Implement Hard Path Borrow/Reservation logic. AGV must reserve the next N nodes ahead (N is configurable).",
+            "contention_rule": "If another AGV reserves the node, wait at current node."
+        },
+        "collision_avoidance": {
+            "directional_sensors": "AGV uses directional sensors: If obstacle is within safety distance AND in the forward 90-degree cone, the AGV brakes/waits. If obstacle is behind (rear 180-degree), ignore.",
+            "node_entry_queueing": "If multiple AGVs target the same node, the physically closer AGV wins priority and the others queue up at the previous node."
+        },
+        "deadlock_resolution": {
+            "ranked_repathing": "If initial path is blocked (e.g., Head-on), attempt K-shortest alternative paths (Ranked Paths) up to 3 times before drastic action.",
+            "step_back_maneuver": "If an AGV is waiting/blocked for 3 retries and the blocker is also stationary/waiting, the AGV must initiate a 'Step Back' (reverse to previous node or detour)."
+        }
+    },
+    "user_interface": {
+        "sidebar": "Config panel for Max Speed, Accel, Decel, Safety Distance, and the Hard Borrow Length (with range slider 0-5).",
+        "controls": "Play/Pause, Spawn AGV, Randomize Seed, Regenerate Map, Auto-Pilot toggle.",
+        "telemetry": "Display AGV status (Moving, Waiting, Repathing), Current Node, Target Node, Remaining Cost, and current Speed."
+    }
+}

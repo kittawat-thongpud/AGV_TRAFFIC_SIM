@@ -1,0 +1,14 @@
+name = "agv-traffic-sim"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-01-01"
+
+[pages]
+  # Config for Cloudflare Pages
+  branch = "main"
+
+# Custom Domain
+domain = "agv-traffic-sim.kittawat.qzz.io"
+
+# GitHub Repository Binding
+# This project is deployed via GitHub Actions.
+Repo: https://github.com/kittawat/AGV_TRAFFIC_SIM (example)
